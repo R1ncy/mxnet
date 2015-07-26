@@ -7,11 +7,8 @@
 #define MXNET_IO_H_
 #include <vector>
 #include <string>
-#include <./tensor_blob.h>
-// check c++11
-#if DMLC_USE_CXX11 == 0
-#error "cxx11 was required for narray module"
-#endif
+#include "dmlc/data.h"
+#include "mxnet/tensor_blob.h"
 
 namespace mxnet {
 /*!
@@ -19,7 +16,7 @@ namespace mxnet {
  * \tparam DType data type
  */
 template<typename DType>
-class IIterator : public DataIter<DType> {
+class IIterator : public dmlc::DataIter<DType> {
 public:
   /*!
    * \brief set the parameter
@@ -81,9 +78,6 @@ public:
   /*! \brief constructor */
   DataBatch(void) {
     inst_index = NULL;
-    data();
-    data_name();
-    extra_data;
     batch_size = 0; num_batch_padd = 0;
   }
   /*! \brief giving name to the data */

@@ -24,7 +24,7 @@ include $(DMLC_CORE)/make/dmlc.mk
 # all tge possible warning tread
 WARNFLAGS= -Wall
 CFLAGS = -DMSHADOW_FORCE_STREAM $(WARNFLAGS)
-CFLAGS += -g -O3 -I./mshadow/ -I./dmlc-core/include -fPIC -Iinclude $(MSHADOW_CFLAGS)
+CFLAGS += -g -O3 -I./mshadow/ -I./dmlc-core/include -fPIC -Iinclude $(MSHADOW_CFLAGS) $(DMLC_CFLAGS)
 LDFLAGS = -pthread $(MSHADOW_LDFLAGS) $(DMLC_LDFLAGS)
 NVCCFLAGS = --use_fast_math -g -O3 -ccbin $(CXX) $(MSHADOW_NVCCFLAGS)
 ROOTDIR = $(CURDIR)
@@ -55,8 +55,8 @@ ifneq ($(ADD_LDFLAGS), NONE)
 endif
 
 #BIN = test/test_threaded_engine test/api_registry_test
-BIN = test/api_registry_test
-OBJ = storage.o narray_op_cpu.o static_operator.o static_operator_cpu.o
+BIN = test/api_registry_test test/io_mnist_test
+OBJ = storage.o narray_op_cpu.o static_operator.o static_operator_cpu.o io.o
 # add threaded engine after it is done
 OBJCXX11 = engine.o narray.o mxnet_api.o registry.o symbol.o operator.o
 CUOBJ =
@@ -88,11 +88,13 @@ symbol.o: src/symbol/symbol.cc
 registry.o: src/registry.cc
 mxnet_api.o: api/mxnet_api.cc
 operator.o: src/operator/operator.cc
+io.o: src/io/io.cc
 
 api/libmxnet.a: $(OBJ) $(OBJCXX11) $(CUOBJ)
 api/libmxnet.so: $(OBJ) $(OBJCXX11) $(CUOBJ)
 
 test/api_registry_test: test/api_registry_test.cc api/libmxnet.a
+test/io_mnist_test: test/io_mnist_test.cc api/libmxnet.a $(DMLC_CORE)/libdmlc.a
 #test/test_threaded_engine: test/test_threaded_engine.cc api/libmxnet.a
 
 $(BIN) :

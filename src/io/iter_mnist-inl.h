@@ -23,6 +23,7 @@ class MNISTIterator: public IIterator<DataBatch> {
     silent_ = 0;
     shuffle_ = 0;
     rnd.Seed(kRandMagic);
+	out_.data.resize(2);
   }
   virtual ~MNISTIterator(void) {
     if (img_.dptr_ != NULL) delete []img_.dptr_;
@@ -52,8 +53,8 @@ class MNISTIterator: public IIterator<DataBatch> {
     }
     out_.inst_index = NULL;
     batch_label_.shape_ = mshadow::Shape2(batch_size_, 1);
-    batch_label_.label.stride_ = 1;
-    batch_data_.stride_ = out_.data.size(3);
+    batch_label_.stride_ = 1;
+    batch_data_.stride_ = batch_data_.size(3);
     out_.batch_size = batch_size_;
     if (shuffle_) this->Shuffle();
     if (silent_ == 0) {
@@ -69,8 +70,8 @@ class MNISTIterator: public IIterator<DataBatch> {
     if (loc_ + batch_size_ <= img_.size(0)) {
       batch_data_.dptr_ = img_[loc_].dptr_;
       batch_label_.dptr_ = &labels_[loc_];
-      out_.data.push_back(TBlob(batch_data_));
-      out_.label.push_back(TBlob(batch_label_));
+	  out_.data[0] = TBlob(batch_data_);
+      out_.data[1] = TBlob(batch_label_);
       out_.inst_index = &inst_[loc_];
       loc_ += batch_size_;
       return true;

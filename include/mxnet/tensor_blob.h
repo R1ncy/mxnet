@@ -7,6 +7,8 @@
 #define MXNET_TENSOR_BLOB_H_
 #include <mshadow/tensor.h>
 
+using namespace mshadow;
+
 namespace mxnet {
 /*! \brief context information about the execution enviroment */
 struct Context {
