@@ -79,3 +79,6 @@ USE_S3 = 1
 
 # path to libjvm.so
 LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
+
+# Choose dag engine implementation (simple, threaded)
+DAG_ENGINE = simple

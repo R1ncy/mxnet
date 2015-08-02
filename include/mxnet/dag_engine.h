@@ -28,7 +28,7 @@ class DAGEngine {
    * \brief operation to pass to DAG engine
    * \param ctx runtime context
    */
-  typedef std::function<void(RunContext rctx)> Op;
+  typedef std::function<void(RunContext rctx)> Fn;
   /*! \brief callback function to notify operation complete */
   typedef std::function<void()> Callback;
   /*!
@@ -36,7 +36,7 @@ class DAGEngine {
    * \param ctx runtime context
    * \param on_complete a callback function used to notify the engine the action completes
    */
-  typedef std::function<void(RunContext ctx, Callback on_complete)> AsyncOp;
+  typedef std::function<void(RunContext ctx, Callback on_complete)> AsyncFn;
   /*!
    * \brief variable of dag engine, used to specify dependencies
    *  defined to be a pointer, that can points to a internal data structure
@@ -47,14 +47,38 @@ class DAGEngine {
    */
   typedef void *Variable;
   /*!
-   * \brief Push an asynchronize operation to the DAG engine
+   * \brief operator type of the dag engine.
+   */
+  typedef void *Operator;
+  /*!
+   * \brief allocate a new operator and return the operator handle. The returned operator
+   * could be saved externally so that it (together with its dependencies) could be reused
+   * for scheduling. 
+   * \param fn the exeuction function
+   * \param use_vars the variables that current operation will use(but not mutate)
+   * \param mutate_vars the variables that current operation will mutate
+   */
+  virtual Operator NewOperator(AsyncFn fn,
+                               const std::vector<Variable> &use_vars,
+                               const std::vector<Variable> &mutate_vars) = 0;
+  /*!
+   * \brief delete the given operator
+   * \param op the operator to delete
+   */
+  virtual void DeleteOperator(Operator op) = 0;
+  /*!
+   * \brief push an operator to the engine. 
+   */
+  virtual void Push(Operator op, Context exec_ctx) = 0;
+  /*!
+   * \brief Push an asynchronize operation to the DAG engine.
    * \param exec_fun execution funtion, this function takes a parameter on_complete
    *  that must be called when the execution completes. For synchronize operations
    * \param exec_ctx execution context
    * \param use_vars the variables that current operation will use(but not mutate)
    * \param mutate_vars the variables that current operation will mutate
    */
-  virtual void PushAsync(AsyncOp exec_fun,
+  virtual void PushAsync(AsyncFn exec_fun,
                          Context exec_ctx,
                          const std::vector<Variable> &use_vars,
                          const std::vector<Variable> &mutate_vars) = 0;
@@ -65,11 +89,11 @@ class DAGEngine {
    * \param use_vars the variables that current operation will use(but not mutate)
    * \param mutate_vars the variables that current operation will mutate
    */
-  virtual void Push(Op exec_fun,
+  virtual void Push(Fn exec_fun,
                     Context exec_ctx,
                     const std::vector<Variable> &use_vars,
                     const std::vector<Variable> &mutate_vars) {
-    AsyncOp f = [exec_fun](RunContext ctx, Callback on_complete) {
+    AsyncFn f = [exec_fun](RunContext ctx, Callback on_complete) {
       exec_fun(ctx); on_complete();
     };
     this->PushAsync(f, exec_ctx, use_vars, mutate_vars);
@@ -83,7 +107,7 @@ class DAGEngine {
    * \param exec_ctx execution context
    * \param var the variable to be deleted
    */
-  virtual void PushDelete(Op delete_fun,
+  virtual void PushDelete(Fn delete_fun,
                           Context exec_ctx,
                           Variable var) = 0;
   /*!

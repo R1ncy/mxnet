@@ -54,10 +54,8 @@ ifneq ($(ADD_LDFLAGS), NONE)
 	LDFLAGS += $(ADD_LDFLAGS)
 endif
 
-#BIN = test/test_threaded_engine test/api_registry_test
-BIN = test/api_registry_test
+BIN = test/api_registry_test test/engine_test 
 OBJ = storage.o narray_op_cpu.o static_operator.o static_operator_cpu.o atomic_symbol_cpu.o
-# add threaded engine after it is done
 OBJCXX11 = engine.o narray.o mxnet_api.o registry.o symbol.o operator.o
 CUOBJ =
 SLIB = api/libmxnet.so
@@ -68,6 +66,11 @@ ifeq ($(USE_CUDA), 1)
 	CUOBJ += narray_op_gpu.o static_operator_gpu.o atomic_symbol_gpu.o
 endif
 
+ENGINE_SRC = src/dag_engine/simple_engine.cc
+ifeq ($(DAG_ENGINE), threaded)
+	ENGINE_SRC = src/dag_engine/threaded_engine.cc src/common/concurrent_blocking_queue.h src/common/spin_lock.h
+endif
+
 .PHONY: clean all test lint doc
 
 all: $(ALIB) $(SLIB) $(BIN)
@@ -76,8 +79,7 @@ $(DMLC_CORE)/libdmlc.a:
 	+ cd $(DMLC_CORE); make libdmlc.a config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
 
 storage.o: src/storage/storage.cc
-engine.o: src/dag_engine/simple_engine.cc
-#engine.o: src/dag_engine/threaded_engine.cc src/common/concurrent_blocking_queue.h src/common/spin_lock.h
+engine.o: $(ENGINE_SRC)
 narray.o: src/narray/narray.cc
 narray_op_cpu.o: src/narray/narray_op_cpu.cc src/narray/narray_op-inl.h
 narray_op_gpu.o: src/narray/narray_op_gpu.cu src/narray/narray_op-inl.h
@@ -95,7 +97,7 @@ api/libmxnet.a: $(OBJ) $(OBJCXX11) $(CUOBJ)
 api/libmxnet.so: $(OBJ) $(OBJCXX11) $(CUOBJ)
 
 test/api_registry_test: test/api_registry_test.cc api/libmxnet.a
-#test/test_threaded_engine: test/test_threaded_engine.cc api/libmxnet.a
+test/engine_test: test/engine_test.cc api/libmxnet.a
 
 $(BIN) :
 	$(CXX) $(CFLAGS) -std=c++0x -o $@ $(filter %.cpp %.o %.c %.a %.cc, $^) $(LDFLAGS)

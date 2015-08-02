@@ -4,14 +4,14 @@
 namespace mxnet {
 class SimpleEngine : public DAGEngine {
  public:
-  virtual void PushAsync(AsyncOp exec_fun,
+  virtual void PushAsync(AsyncFn exec_fun,
                          Context exec_ctx,
                          const std::vector<Variable> &use_vars,
                          const std::vector<Variable> &mutate_vars) {
     // cannot schedule async using naive way because deps are not captured
     LOG(FATAL) << "cannot schedule async operations";
   }
-  virtual void Push(Op exec_fun,
+  virtual void Push(Fn exec_fun,
                     Context exec_ctx,
                     const std::vector<Variable> &use_vars,
                     const std::vector<Variable> &mutate_vars) {
@@ -23,7 +23,7 @@ class SimpleEngine : public DAGEngine {
       exec_fun(ctx_);
     }
   }
-  virtual void PushDelete(Op delete_fun,
+  virtual void PushDelete(Fn delete_fun,
                           Context exec_ctx,
                           Variable var) {
     this->Push(delete_fun, exec_ctx, {}, {var});
@@ -32,7 +32,17 @@ class SimpleEngine : public DAGEngine {
     // in practice return a ptr to a cell
     // that have the info about the variable
     // use ptr directly instead of ID because this avoids an indirect mapping
-    return NULL;
+    return nullptr;
+  }
+
+  virtual Operator NewOperator(AsyncFn fn,
+                               const std::vector<Variable> &use_vars,
+                               const std::vector<Variable> &mutate_vars) {
+    return nullptr;
+  }
+  virtual void DeleteOperator(Operator op) {
+  }
+  virtual void Push(Operator op, Context exec_ctx) {
   }
 
  private:

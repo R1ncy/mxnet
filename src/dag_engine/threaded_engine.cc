@@ -22,7 +22,7 @@ class ThreadedEngine : public DAGEngine {
  public:
   explicit ThreadedEngine(int numthreads = DEFAULT_NUM_WORKER_THREADS): numthreads_(numthreads) {
     for (int i = 0; i < numthreads; ++i) {
-      worker_queues_.push_back(new ConcurrentBlockingQueue<OpDescr*>());
+      worker_queues_.push_back(new common::ConcurrentBlockingQueue<OpDescr*>());
       workers_.emplace_back(&ThreadedEngine::WorkerRoutine, this, i);
     }
   }
@@ -33,7 +33,19 @@ class ThreadedEngine : public DAGEngine {
       workers_[i].join();
     }
   }
-  void Push(AsyncOp exec_fun,
+  Operator NewOperator(AsyncFn fn,
+                               const std::vector<Variable> &use_vars,
+                               const std::vector<Variable> &mutate_vars) override {
+    // TODO(minjie): TBD
+    return nullptr;
+  }
+  void DeleteOperator(Operator op) override {
+    // TODO(minjie): TBD
+  }
+  void Push(Operator op, Context exec_ctx) override {
+    // TODO(minjie): TBD
+  }
+  void PushAsync(AsyncFn exec_fun,
             Context exec_ctx,
             const vector<Variable> &use_vars,
             const vector<Variable> &mutate_vars) override {
@@ -60,15 +72,15 @@ class ThreadedEngine : public DAGEngine {
       spin_unlock(&vard->lock);
     }
   }
-  void Push(Op exec_fun,
+  void Push(Fn exec_fun,
             Context exec_ctx,
             const vector<Variable> &use_vars,
             const vector<Variable> &mutate_vars) override {
-    this->Push([exec_fun](RunContext ctx, Callback on_complete) {
+    this->PushAsync([exec_fun](RunContext ctx, Callback on_complete) {
         exec_fun(ctx); on_complete();
       }, exec_ctx, use_vars, mutate_vars);
   }
-  void PushDelete(Op delete_fun, Context exec_ctx, Variable var) override {
+  void PushDelete(Fn delete_fun, Context exec_ctx, Variable var) override {
     this->Push([delete_fun, var] (RunContext ctx) {
           delete_fun(ctx);
           delete static_cast<VarDescr*>(var);  // TODO(minjie): use variable pool instead
@@ -98,7 +110,7 @@ class ThreadedEngine : public DAGEngine {
     kDelete,
   };
   struct OpDescr {
-    AsyncOp op;
+    AsyncFn op;
     Context exec_ctx;
     vector<Variable> read_vars;
     vector<Variable> write_vars;
@@ -161,7 +173,7 @@ class ThreadedEngine : public DAGEngine {
   }
   void WorkerRoutine(int thrid) {
     OpDescr* opd = nullptr;
-    while (!worker_queues_[thrid]->Pop(opd)) {
+    while (!worker_queues_[thrid]->Pop(&opd)) {
       // LOG(INFO) << "worker thread #" << thrid << " got operator " << opd;
       opd->op(GetRunContext(opd->exec_ctx), [this, opd] () { this->OnOpFinished(opd); });
       opd = nullptr;
@@ -170,7 +182,7 @@ class ThreadedEngine : public DAGEngine {
 
  private:
   const int numthreads_;
-  vector<ConcurrentBlockingQueue<OpDescr*>*> worker_queues_;
+  vector<common::ConcurrentBlockingQueue<OpDescr*>*> worker_queues_;
   vector<thread> workers_;
 };
 
