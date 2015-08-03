@@ -7,6 +7,7 @@
 #define MXNET_STORAGE_H_
 #include "./base.h"
 #include "./tensor_blob.h"
+#include "./context.h"
 
 namespace mxnet {
 /*! \brief memory allocator of storage */
