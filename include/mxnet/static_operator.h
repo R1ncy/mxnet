@@ -10,6 +10,7 @@
 #include <vector>
 #include "./base.h"
 #include "./tensor_blob.h"
+#include "./context.h"
 
 namespace mxnet {
 /*!

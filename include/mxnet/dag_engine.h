@@ -57,6 +57,7 @@ class DAGEngine {
    * \param fn the exeuction function
    * \param use_vars the variables that current operation will use(but not mutate)
    * \param mutate_vars the variables that current operation will mutate
+   * \return the new operator
    */
   virtual Operator NewOperator(AsyncFn fn,
                                const std::vector<Variable> &use_vars,
