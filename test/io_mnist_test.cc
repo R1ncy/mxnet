@@ -3,12 +3,16 @@
 
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <dmlc/config.h>
+#include <iostream>
+#include <fstream>
 #include "mxnet/io.h"
 #include "../src/utils/utils.h"
-#include "../src/utils/config.h"
+
 
 using namespace std;
 using namespace mxnet;
+using namespace dmlc;
 
 void InitIter(IIterator<DataBatch>* itr,
 					const std::vector< std::pair< std::string, std::string> > &defcfg) {
@@ -73,19 +77,15 @@ IIterator<DataBatch>* CreateIterators(const std::vector< std::pair< std::string,
  */
 
 int main(int argc, char** argv) {
-	std::vector< std::pair< std::string, std::string> > itcfg;
-	dmlc::Stream *cfg = dmlc::Stream::Create(argv[1], "r");
-	{
-		dmlc::istream is(cfg);
-		mxnet::utils::ConfigStreamReader itr(is);
-		itr.Init();
-		while(itr.Next()) {
-			itcfg.push_back(std::make_pair(std::string(itr.name()), std::string(itr.val())));
-		}
-	}
-
-	delete cfg;
-	//Get the data and init
+  std::ifstream ifs(argv[1], std::ifstream::in);
+  std::vector< std::pair< std::string, std::string> > itcfg;
+  Config cfg(ifs);
+  for(Config::ConfigIterator iter = cfg.begin(); iter != cfg.end(); ++iter) {
+    Config::ConfigEntry ent = *iter;
+    itcfg.push_back(std::make_pair(ent.first, ent.second));
+  }
+	
+  //Get the data and init
 	IIterator<DataBatch>* data_itr = CreateIterators(itcfg);
 	data_itr->BeforeFirst();
 	int batch_dir = 0;

@@ -49,13 +49,13 @@ PS_PATH = NONE
 PS_THIRD_PATH = NONE
 
 # whether compile with rabit
-USE_RABIT_PS = 1
+USE_RABIT_PS = 0
 RABIT_PATH = rabit
 
 # use openmp iterator
 USE_OPENMP_ITER = 1
 # the additional link flags you want to add
-ADD_LDFLAGS = -ljpeg
+# ADD_LDFLAGS = -ljpeg
 
 # the additional compile flags you want to add
 ADD_CFLAGS =
@@ -75,7 +75,7 @@ USE_HDFS = 0
 
 # whether use AWS S3 support during compile
 # this will allow cxxnet to directly save/load model from s3
-USE_S3 = 1
+USE_S3 = 0
 
 # path to libjvm.so
 LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
