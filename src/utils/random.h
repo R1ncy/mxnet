@@ -8,11 +8,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cmath>
-#include "./utils.h"
-
-#if _MSC_VER
-#define rand_r(x) rand()
-#endif
+#include <random>
 
 namespace mxnet {
 namespace utils {
@@ -28,14 +24,12 @@ class RandomSampler {
    */
   inline void Seed(unsigned seed) {
     this->rseed_ = seed;
-#if _MSC_VER
-    srand(seed);
-#endif    
+    this->rengine_ = std::mt19937(seed);
   }
   /*! \brief return a real number uniform in [0,1) */
   inline double NextDouble() {
-    return static_cast<double>(rand_r(&rseed_)) /
-        (static_cast<double>(RAND_MAX) + 1.0);
+    return static_cast<double>(rengine_() - std::mt19937::min()) /
+        (static_cast<double>(std::mt19937::max() - std::mt19937::min()));
   }
   /*! \brief return a random number in n */
   inline uint32_t NextUInt32(uint32_t n) {
@@ -57,6 +51,7 @@ class RandomSampler {
 
  private:
   unsigned rseed_;
+  std::mt19937 rengine_;
 };
 }  // namespace utils
 }  // namespace mxnet

@@ -44,7 +44,7 @@ IIterator<DataBatch>* CreateIterators(const std::vector< std::pair< std::string,
 	  if (!strcmp(name, "pred")) {
 		flag = 3; continue;
 	  }
-	  if (!strcmp(name, "iter") && !strcmp(val, "end")) {
+	  if (!strcmp(name, "iterend") && !strcmp(val, "true")) {
 		if (flag == 1) {
 		  data_itr = mxnet::CreateIterator(itcfg);
 		}
@@ -84,7 +84,6 @@ int main(int argc, char** argv) {
     Config::ConfigEntry ent = *iter;
     itcfg.push_back(std::make_pair(ent.first, ent.second));
   }
-	
   //Get the data and init
 	IIterator<DataBatch>* data_itr = CreateIterators(itcfg);
 	data_itr->BeforeFirst();

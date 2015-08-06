@@ -54,8 +54,8 @@ ifneq ($(ADD_LDFLAGS), NONE)
 	LDFLAGS += $(ADD_LDFLAGS)
 endif
 
-#BIN = test/test_threaded_engine test/api_registry_test
-BIN = test/api_registry_test test/io_mnist_test
+#BIN = test/test_threaded_engine test/api_registry_test test/random_test.cc
+BIN = test/api_registry_test test/io_mnist_test test/random_test
 OBJ = storage.o narray_op_cpu.o static_operator.o static_operator_cpu.o io.o
 # add threaded engine after it is done
 OBJCXX11 = engine.o narray.o mxnet_api.o registry.o symbol.o operator.o
@@ -95,6 +95,7 @@ api/libmxnet.so: $(OBJ) $(OBJCXX11) $(CUOBJ)
 
 test/api_registry_test: test/api_registry_test.cc api/libmxnet.a
 test/io_mnist_test: test/io_mnist_test.cc api/libmxnet.a $(DMLC_CORE)/libdmlc.a
+test/random_test: test/random_test.cc api/libmxnet.a $(DMLC_CORE)/libdmlc.a
 #test/test_threaded_engine: test/test_threaded_engine.cc api/libmxnet.a
 
 $(BIN) :
