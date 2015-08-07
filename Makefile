@@ -24,9 +24,9 @@ include $(DMLC_CORE)/make/dmlc.mk
 # all tge possible warning tread
 WARNFLAGS= -Wall
 CFLAGS = -DMSHADOW_FORCE_STREAM $(WARNFLAGS)
-CFLAGS += -std=c++0x -g -O3 -I./mshadow/ -I./dmlc-core/include -fPIC -Iinclude $(MSHADOW_CFLAGS) $(DMLC_CFLAGS)
+CFLAGS += -g -O3 -I./mshadow/ -I./dmlc-core/include -fPIC -Iinclude $(MSHADOW_CFLAGS) $(DMLC_CFLAGS)
 LDFLAGS = -pthread $(MSHADOW_LDFLAGS) $(DMLC_LDFLAGS)
-NVCCFLAGS = -std=c++11 --use_fast_math -g -O3 -ccbin $(CXX) $(MSHADOW_NVCCFLAGS)
+NVCCFLAGS = --use_fast_math -g -O3 -ccbin $(CXX) $(MSHADOW_NVCCFLAGS)
 ROOTDIR = $(CURDIR)
 
 ifndef LINT_LANG
@@ -102,7 +102,7 @@ $(BIN) :
 	$(CXX) $(CFLAGS) -std=c++0x -o $@ $(filter %.cpp %.o %.c %.a %.cc, $^) $(LDFLAGS)
 
 $(OBJ) :
-	$(CXX) -c $(CFLAGS) -o $@ $(firstword $(filter %.cpp %.c %.cc, $^) )
+	$(CXX) -c $(CFLAGS) -std=c++0x -o $@ $(firstword $(filter %.cpp %.c %.cc, $^) )
 
 $(OBJCXX11) :
 	$(CXX) -std=c++0x -c $(CFLAGS) -o $@ $(firstword $(filter %.cpp %.c %.cc, $^) )
