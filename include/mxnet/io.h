@@ -7,6 +7,7 @@
 #define MXNET_IO_H_
 #include <vector>
 #include <string>
+#include <utility>
 #include "dmlc/data.h"
 #include "mxnet/tensor_blob.h"
 
@@ -17,7 +18,7 @@ namespace mxnet {
  */
 template<typename DType>
 class IIterator : public dmlc::DataIter<DType> {
-public:
+ public:
   /*!
    * \brief set the parameter
    * \param name name of parameter
@@ -32,17 +33,17 @@ public:
   virtual bool Next(void) = 0;
   /*! \brief get current data */
   virtual const DType &Value(void) const = 0;
-public:
+ public:
   /*! \brief constructor */
   virtual ~IIterator(void) {}
   /*! \brief store the name of each data, it could be used for making NArrays */
   std::vector<std::string> data_names;
-public:
+ public:
   /*! \brief set data name to each attribute of data */
   inline void SetDataName(const std::string data_name){
     data_names.push_back(data_name);
   }
-}; // class IIterator
+};  // class IIterator
 
 /*! \brief a single data instance */
 struct DataInst {
@@ -52,7 +53,7 @@ struct DataInst {
   std::vector<TBlob> data;
   /*! \brief extra data to be fed to the network */
   std::string extra_data;
-}; // struct DataInst
+};  // struct DataInst
 
 /*!
  * \brief a standard batch of data commonly used by iterator
@@ -61,7 +62,7 @@ struct DataInst {
  *      data and label, how we use them is to see the DNN implementation.
  */
 struct DataBatch {
-public:
+ public:
   /*! \brief unique id for instance, can be NULL, sometimes is useful */
   unsigned *inst_index;
   /*! \brief number of instance */
@@ -69,12 +70,12 @@ public:
   /*! \brief number of padding elements in this batch,
        this is used to indicate the last elements in the batch are only padded up to match the batch, and should be discarded */
   mshadow::index_t num_batch_padd;
-public:
+ public:
   /*! \brief content of dense data, if this DataBatch is dense */
   std::vector<TBlob> data;
   /*! \brief extra data to be fed to the network */
   std::string extra_data;
-public:
+ public:
   /*! \brief constructor */
   DataBatch(void) {
     inst_index = NULL;
@@ -82,15 +83,12 @@ public:
   }
   /*! \brief giving name to the data */
   void Naming(std::vector<std::string> names);
-}; // struct DataBatch
+};  // struct DataBatch
 
 /*!
  * \brief create iterator from configure settings
  * \param cfg configure settings key=vale pair
  */
 IIterator<DataBatch> *CreateIterator(const std::vector<std::pair<std::string, std::string> > &cfg);
-}  // namespace cxxnet
-
-
-
+}  // namespace mxnet
 #endif  // MXNET_IO_H_

@@ -4,12 +4,13 @@
  * \brief holder of a sequence of DataInst in CPU
  *        that are not necessarily of same shape
  */
-#ifndef MXNET_INST_VECTOR_H_
-#define MXNET_INST_VECTOR_H_
-#include "./data.h"
+#ifndef MXNET_IO_INST_VECTOR_H_
+#define MXNET_IO_INST_VECTOR_H_
 #include <vector>
+#include <string>
 #include <dmlc/base.h>
 #include <mshadow/tensor.h>
+#include "./data.h"
 namespace mxnet {
 /*!
  * \brief tensor vector that can store sequence of tensor
@@ -27,7 +28,7 @@ class TensorVector {
     CHECK(i + 1 < offset_.size());
     CHECK(shape_[i].Size() == offset_[i + 1] - offset_[i]);
     return mshadow::Tensor<cpu, dim, DType>
-        ((DType*)BeginPtr(content_) + offset_[i], shape_[i]);
+        (reinterpret_cast<DType*>(BeginPtr(content_)) + offset_[i], shape_[i]);
   }
   inline mshadow::Tensor<cpu, dim, DType> Back() const {
     return (*this)[Size() - 1];
@@ -48,6 +49,7 @@ class TensorVector {
     content_.clear();
     shape_.clear();
   }
+ 
  private:
   // offset of the data content
   std::vector<size_t> offset_;
@@ -91,7 +93,7 @@ class TBlobVector {
  * non-uniform shape data instance in a shape efficient way
  */
 class InstVector {
- public:  
+ public: 
   inline size_t Size(void) const {
     return index_.size();
   }
@@ -103,8 +105,8 @@ class InstVector {
   inline void Clear(void);
   // push the newly coming instance
   inline void Push(unsigned index, TBlob data_);
-  
- private:  
+
+ private:
   /*! \brief index of the data */
   std::vector<unsigned> index_;
   // data
@@ -112,4 +114,4 @@ class InstVector {
   // extra data
   std::vector<std::string> extra_data_;
 };
-#endif  // MXNET_TENSOR_VECTOR_H_
+#endif  // MXNET_IO_INST_VECTOR_H_

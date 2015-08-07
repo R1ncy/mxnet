@@ -1,3 +1,6 @@
+// Copyright (c) 2015 by Contributors
+// random test code
+
 #include <iostream>
 #include <random>
 #include "../src/utils/random.h"

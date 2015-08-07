@@ -1,14 +1,15 @@
 /*!
+ *  Copyright (c) 2015 by Contributors
  * \file global_random.h
  * \brief global random number utils, used for some preprocessing
  * \author Tianqi Chen
  */
-#ifndef MXNET_UTILS_GLOBAL_RANDOM_H_
-#define MXNET_UTILS_GLOBAL_RANDOM_H_
-#include <cstdlib>
+#ifndef MXNET_UTILS_RANDOM_H_
+#define MXNET_UTILS_RANDOM_H_
 #include <vector>
 #include <cmath>
 #include <random>
+#include <algorithm>
 
 namespace mxnet {
 namespace utils {
@@ -38,8 +39,8 @@ class RandomSampler {
   /*! \brief random shuffle data */
   template<typename T>
   inline void Shuffle(T *data, size_t sz) {
-    if(sz == 0) return;
-    for(uint32_t i = (uint32_t)sz - 1; i > 0; i--) {
+    if (sz == 0) return;
+    for (uint32_t i = (uint32_t)sz - 1; i > 0; i--) {
       std::swap(data[i], data[NextUInt32(i+1)]);
     }
   }
@@ -55,4 +56,4 @@ class RandomSampler {
 };
 }  // namespace utils
 }  // namespace mxnet
-#endif
+#endif // MXNET_UTILS_RANDOM_H_
