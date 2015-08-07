@@ -26,7 +26,7 @@ WARNFLAGS= -Wall
 CFLAGS = -DMSHADOW_FORCE_STREAM $(WARNFLAGS)
 CFLAGS += -std=c++0x -g -O3 -I./mshadow/ -I./dmlc-core/include -fPIC -Iinclude $(MSHADOW_CFLAGS) $(DMLC_CFLAGS)
 LDFLAGS = -pthread $(MSHADOW_LDFLAGS) $(DMLC_LDFLAGS)
-NVCCFLAGS = -std=c++0x --use_fast_math -g -O3 -ccbin $(CXX) $(MSHADOW_NVCCFLAGS)
+NVCCFLAGS = -std=c++11 --use_fast_math -g -O3 -ccbin $(CXX) $(MSHADOW_NVCCFLAGS)
 ROOTDIR = $(CURDIR)
 
 ifndef LINT_LANG

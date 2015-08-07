@@ -33,12 +33,10 @@ class IIterator : public dmlc::DataIter<DType> {
   virtual bool Next(void) = 0;
   /*! \brief get current data */
   virtual const DType &Value(void) const = 0;
- public:
   /*! \brief constructor */
   virtual ~IIterator(void) {}
   /*! \brief store the name of each data, it could be used for making NArrays */
   std::vector<std::string> data_names;
- public:
   /*! \brief set data name to each attribute of data */
   inline void SetDataName(const std::string data_name){
     data_names.push_back(data_name);
@@ -88,6 +86,7 @@ struct DataBatch {
 /*!
  * \brief create the databatch iterator IIterator
  * \param cfg configure settings key=vale pair
+ * \return the data IIterator ptr
  */
 IIterator<DataBatch> *CreateIterator(const std::vector<std::pair<std::string, std::string> > &cfg);
 }  // namespace mxnet
