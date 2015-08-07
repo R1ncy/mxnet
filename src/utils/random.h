@@ -29,25 +29,16 @@ class RandomSampler {
   }
   /*! \brief return a real number uniform in [0,1) */
   inline double NextDouble() {
-    return static_cast<double>(rengine_() - std::mt19937::min()) /
-        (static_cast<double>(std::mt19937::max() - std::mt19937::min()));
+    return std::generate_canonical<double, std::numeric_limits<double>::digits >(rengine_);
   }
   /*! \brief return a random number in n */
   inline uint32_t NextUInt32(uint32_t n) {
     return static_cast<uint32_t>(floor(NextDouble() * n));
   }
-  /*! \brief random shuffle data */
-  template<typename T>
-  inline void Shuffle(T *data, size_t sz) {
-    if (sz == 0) return;
-    for (uint32_t i = (uint32_t)sz - 1; i > 0; i--) {
-      std::swap(data[i], data[NextUInt32(i+1)]);
-    }
-  }
   /*!\brief random shuffle data in */
   template<typename T>
-  inline void Shuffle(std::vector<T> &data) {
-    Shuffle(&data[0], data.size());
+  inline void Shuffle(std::vector<T> *data) {
+    std::shuffle(data->begin(), data->end(), rengine_);
   }
 
  private:
@@ -56,4 +47,4 @@ class RandomSampler {
 };
 }  // namespace utils
 }  // namespace mxnet
-#endif // MXNET_UTILS_RANDOM_H_
+#endif  // MXNET_UTILS_RANDOM_H_

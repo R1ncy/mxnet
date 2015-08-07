@@ -12,7 +12,7 @@
 
 namespace mxnet {
   IIterator<DataBatch> *CreateIterator(
-		  const std::vector< std::pair<std::string, std::string> > &cfg) {
+          const std::vector< std::pair<std::string, std::string> > &cfg) {
   size_t i = 0;
   IIterator<DataBatch> *it = NULL;
   for (; i < cfg.size(); ++i) {
@@ -20,11 +20,11 @@ namespace mxnet {
     const char *val  = cfg[i].second.c_str();
     if (!strcmp(name, "iter")) {
       if (!strcmp(val, "mnist")) {
-		  CHECK(it == NULL) << "mnist cannot chain over other iterator";
-		  it = new MNISTIterator(); continue;
-	  }
+          CHECK(it == NULL) << "mnist cannot chain over other iterator";
+          it = new MNISTIterator(); continue;
+      }
       CHECK(strcmp(val, "mnist")) << "Currently only have mnist iterator";
-	}
+    }
     if (it != NULL) {
       it->SetParam(name, val);
     }

@@ -14,15 +14,15 @@ using namespace mxnet;
 using namespace dmlc;
 
 void InitIter(IIterator<DataBatch>* itr,
-					const std::vector< std::pair< std::string, std::string> > &defcfg) {
+        const std::vector< std::pair< std::string, std::string> > &defcfg) {
     for (size_t i = 0; i < defcfg.size(); ++i) {
       itr->SetParam(defcfg[i].first.c_str(), defcfg[i].second.c_str());
     }
     itr->Init();
 }
 
-IIterator<DataBatch>* CreateIterators(const std::vector< std::pair< std::string, std::string> >& cfg)
-{
+IIterator<DataBatch>* CreateIterators(
+        const std::vector< std::pair< std::string, std::string> >& cfg) {
     IIterator<DataBatch>* data_itr = NULL;
     int flag = 0;
     std::string evname;
@@ -48,7 +48,7 @@ IIterator<DataBatch>* CreateIterators(const std::vector< std::pair< std::string,
       }
       if (flag == 0) {
           defcfg.push_back(cfg[i]);
-      }else{
+      } else {
           itcfg.push_back(cfg[i]);
       }
     }
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   std::ifstream ifs(argv[1], std::ifstream::in);
   std::vector< std::pair< std::string, std::string> > itcfg;
   Config cfg(ifs);
-  for(Config::ConfigIterator iter = cfg.begin(); iter != cfg.end(); ++iter) {
+  for (Config::ConfigIterator iter = cfg.begin(); iter != cfg.end(); ++iter) {
     Config::ConfigEntry ent = *iter;
     itcfg.push_back(std::make_pair(ent.first, ent.second));
   }
@@ -84,13 +84,13 @@ int main(int argc, char** argv) {
   IIterator<DataBatch>* data_itr = CreateIterators(itcfg);
   data_itr->BeforeFirst();
   int batch_dir = 0;
-  while(data_itr->Next())
-  {
-      std::cout  << "Label of Batch " << batch_dir ++ << std::endl;
+  while (data_itr->Next()) {
+      std::cout  << "Label of Batch " << batch_dir++ << std::endl;
       // print label
-      mshadow::Tensor<mshadow::cpu, 2> label = data_itr->Value().data[1].get<mshadow::cpu, 2, float>();
-      for(size_t i = 0; i < label.shape_.shape_[0]; i++)
+      DataBatch db = data_itr->Value();
+      mshadow::Tensor<mshadow::cpu, 2> label = db.data[1].get<mshadow::cpu, 2, float>();
+      for (size_t i = 0; i < label.shape_.shape_[0]; i++)
           std::cout << label.dptr_[i] << " ";
-      std::cout << "\n"; 
-	}
+      std::cout << "\n";
+  }
 }

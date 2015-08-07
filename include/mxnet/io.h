@@ -86,7 +86,7 @@ struct DataBatch {
 };  // struct DataBatch
 
 /*!
- * \brief create iterator from configure settings
+ * \brief create the databatch iterator IIterator<DataBatch>
  * \param cfg configure settings key=vale pair
  */
 IIterator<DataBatch> *CreateIterator(const std::vector<std::pair<std::string, std::string> > &cfg);

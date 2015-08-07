@@ -6,10 +6,10 @@
  */
 #ifndef MXNET_IO_INST_VECTOR_H_
 #define MXNET_IO_INST_VECTOR_H_
-#include <vector>
-#include <string>
 #include <dmlc/base.h>
 #include <mshadow/tensor.h>
+#include <vector>
+#include <string>
 #include "./data.h"
 namespace mxnet {
 /*!
@@ -49,7 +49,7 @@ class TensorVector {
     content_.clear();
     shape_.clear();
   }
- 
+
  private:
   // offset of the data content
   std::vector<size_t> offset_;
@@ -93,7 +93,7 @@ class TBlobVector {
  * non-uniform shape data instance in a shape efficient way
  */
 class InstVector {
- public: 
+ public:
   inline size_t Size(void) const {
     return index_.size();
   }

@@ -1,10 +1,10 @@
 /*!
  *  Copyright (c) 2015 by Contributors
- * \file iter_mnist-inl.hpp
+ * \file iter_mnist-inl.h
  * \brief iterator that takes mnist dataset
  */
-#ifndef MXNET_IO_ITER_MNIST_INL_HPP_
-#define MXNET_IO_ITER_MNIST_INL_HPP_
+#ifndef MXNET_IO_ITER_MNIST_INL_H_
+#define MXNET_IO_ITER_MNIST_INL_H_
 #include <mshadow/tensor.h>
 #include <mxnet/io.h>
 #include <mxnet/base.h>
@@ -25,7 +25,7 @@ class MNISTIterator: public IIterator<DataBatch> {
     silent_ = 0;
     shuffle_ = 0;
     rnd.Seed(kRandMagic);
-	out_.data.resize(2);
+    out_.data.resize(2);
   }
   virtual ~MNISTIterator(void) {
     if (img_.dptr_ != NULL) delete []img_.dptr_;
@@ -84,9 +84,9 @@ class MNISTIterator: public IIterator<DataBatch> {
   virtual const DataBatch &Value(void) const {
     return out_;
   }
- 
+
  private:
-  inline void LoadImage(void) {   
+  inline void LoadImage(void) {
     dmlc::Stream *stdimg = dmlc::Stream::Create(path_img.c_str(), "r");
     ReadInt(stdimg);
     int image_count = ReadInt(stdimg);
@@ -114,7 +114,7 @@ class MNISTIterator: public IIterator<DataBatch> {
   inline void LoadLabel(void) {
     dmlc::Stream *stdlabel = dmlc::Stream::Create(path_label.c_str(), "r");
     ReadInt(stdlabel);
-    int labels_count =ReadInt(stdlabel);
+    int labels_count = ReadInt(stdlabel);
     labels_.resize(labels_count);
     for (int i = 0; i < labels_count; ++i) {
       unsigned char ch;
@@ -125,7 +125,7 @@ class MNISTIterator: public IIterator<DataBatch> {
     delete stdlabel;
   }
   inline void Shuffle(void) {
-    rnd.Shuffle(inst_);
+    rnd.Shuffle(&inst_);
     std::vector<float> tmplabel(labels_.size());
     mshadow::TensorContainer<cpu, 3> tmpimg(img_.shape_);
     for (size_t i = 0; i < inst_.size(); ++i) {
@@ -137,7 +137,7 @@ class MNISTIterator: public IIterator<DataBatch> {
     mshadow::Copy(img_, tmpimg);
     labels_ = tmplabel;
   }
- 
+
  private:
   inline static int ReadInt(dmlc::Stream *fi) {
     unsigned char buf[4];
@@ -145,7 +145,7 @@ class MNISTIterator: public IIterator<DataBatch> {
         << "invalid mnist format";
     return reinterpret_cast<int>(buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]);
   }
- 
+
  private:
   /*! \brief silent */
   int silent_;
@@ -177,6 +177,6 @@ class MNISTIterator: public IIterator<DataBatch> {
   utils::RandomSampler rnd;
   // magic number to setup randomness
   static const int kRandMagic = 0;
-}; // class MNISTIterator
+};  // class MNISTIterator
 }  // namespace mxnet
-#endif  // MXNET_IO_ITER_MNIST_INL_HPP_
+#endif  // MXNET_IO_ITER_MNIST_INL_H_
