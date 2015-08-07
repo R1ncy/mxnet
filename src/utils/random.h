@@ -10,6 +10,7 @@
 #include <cmath>
 #include <random>
 #include <algorithm>
+#include <limits>
 
 namespace mxnet {
 namespace utils {

@@ -5,7 +5,7 @@
 #include <random>
 #include "../src/utils/random.h"
 
-//using namspeace mxnet;
+// using namspeace mxnet;
 using namespace std;
 
 int main(int argc, char *argv[]) {
