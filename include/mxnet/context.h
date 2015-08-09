@@ -2,10 +2,7 @@
 #ifndef MXNET_CONTEXT_H_
 #define MXNET_CONTEXT_H_
 
-#include <dmlc/config.h>
 #include <mshadow/tensor.h>
-
-#include <vector>
 
 namespace mxnet {
 
@@ -54,10 +51,6 @@ struct RunContext {
 class ContextManager {
  public:
   /*!
-   * \brief initialize the manager and resources from configuration
-   */
-  void Initialize(const dmlc::Config& config);
-  /*!
    * \brief get the runtime context from the given context and streamid
    * \param ctx the context information (i.e, what device, which card)
    * \param streamid which stream 
@@ -75,9 +68,11 @@ class ContextManager {
    * \return number of streams
    */
   size_t NumStreams(int gpuid) const;
-
- private:
-  std::vector<RunContext*> run_ctx_;
+  /*!
+   * \brief get the context manager singleton instance
+   * \return context manager instance
+   */
+  static ContextManager* get();
 };
 
 }  // namespace mxnet
