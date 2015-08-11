@@ -35,14 +35,14 @@ endif
 
 # setup opencv
 ifeq ($(USE_OPENCV),1)
-	CFLAGS+= -DCXXNET_USE_OPENCV=1
+	CFLAGS+= -DMXNET_USE_OPENCV=1
 	LDFLAGS+= `pkg-config --libs opencv`
 else
 	CFLAGS+= -DCXXNET_USE_OPENCV=0
 endif
 
 ifeq ($(USE_CUDNN), 1)
-	CFLAGS += -DCXXNET_USE_CUDNN=1
+	CFLAGS += -DMXNET_USE_CUDNN=1
 	LDFLAGS += -lcudnn
 endif
 
@@ -56,13 +56,14 @@ endif
 
 BIN = test/api_registry_test test/engine_test 
 OBJ = storage.o narray_op_cpu.o static_operator.o static_operator_cpu.o atomic_symbol_cpu.o
-OBJCXX11 = engine.o narray.o mxnet_api.o registry.o symbol.o operator.o
+OBJCXX11 = engine.o narray.o mxnet_api.o registry.o symbol.o operator.o context.o
 CUOBJ =
 SLIB = api/libmxnet.so
 ALIB = api/libmxnet.a
 LIB_DEP = $(DMLC_CORE)/libdmlc.a
 
 ifeq ($(USE_CUDA), 1)
+	CFLAGS+= -DMXNET_USE_CUDA=1
 	CUOBJ += narray_op_gpu.o static_operator_gpu.o atomic_symbol_gpu.o
 endif
 
@@ -78,6 +79,7 @@ all: $(ALIB) $(SLIB) $(BIN)
 $(DMLC_CORE)/libdmlc.a:
 	+ cd $(DMLC_CORE); make libdmlc.a config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
 
+context.o: src/context.cc
 storage.o: src/storage/storage.cc
 engine.o: $(ENGINE_SRC)
 narray.o: src/narray/narray.cc

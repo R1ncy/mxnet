@@ -4,6 +4,18 @@
 
 #include <vector>
 
+#if MXNET_USE_CUDA
+#include "mxnet/cuda_utils.h"
+#include <cuda_runtime_api.h>
+#include <cublas_v2.h>
+#endif  // MXNET_USE_CUDA
+
+#if MXNET_USE_CUDNN
+#include <cudnn.h>
+#endif  // MXNET_USE_CUDNN
+
+#define DEFAULT_NUM_STREAMS 4
+
 using namespace std;
 
 namespace mxnet {
@@ -11,14 +23,39 @@ namespace mxnet {
 class ContextManagerImpl : public ContextManager {
  public:
   ContextManagerImpl() {
-    // TODO(minjie): initialize
+    // initialize contexts
+#if MXNET_USE_CUDA
+    int num_devices;
+    CUDA_CALL(cudaGetDeviceCount(&num_devices));
+    for (int i = 0; i < num_devices; ++i) {
+      GpuRunContext gctx;
+      for (int j = 0; j < DEFAULT_NUM_STREAMS; ++j) {
+        cudaStream_t *stream = new cudaStream_t;
+        CUDA_CALL(cudaStreamCreate(stream));
+        cublasHandle_t *cublas_handle = new cublasHandle_t;
+        CUBLAS_CALL(cublasCreate(cublas_handle));
+        CUBLAS_CALL(cublasSetStream(*cublas_handle, *stream));
+#if MXNET_USE_CUDNN
+        cudnnHandle_t *cudnn_handle = new cudnnHandle_t;
+        CUDNN_CALL(cudnnCreate(cudnn_handle));
+        CUDNN_CALL(cudnnSetStream(*cudnn_handle, *stream));
+        gctx.stream_ctx.push_back(RunContext{stream, cublas_handle, cudnn_handle});
+        //gctx.stream_ctx.emplace_back(stream, cublas_handle, cudnn_handle);
+#else  // MXNET_USE_CUDNN
+        gctx.stream_ctx.push_back(RunContext{stream, cublas_handle, nullptr});
+#endif  // MXNET_USE_CUDNN
+      }
+      gpu_ctx_.push_back(gctx);
+    }
+#endif  // MXNET_USE_CUDA
+    cpu_ctx_ = {nullptr, nullptr, nullptr};
   }
   const RunContext* GetRunContext(const Context &ctx, int streamid) const {
     switch (ctx.dev_mask) {
       case mshadow::cpu::kDevMask:
         return &cpu_ctx_;
       case mshadow::gpu::kDevMask:
-        return &gpu_ctx_.at(ctx.dev_id).stream_ctx_.at(streamid);
+        return &gpu_ctx_.at(ctx.dev_id).stream_ctx.at(streamid);
       default:
         LOG(FATAL) << "unknown dev mask:" << ctx.dev_mask;
     };
@@ -28,12 +65,12 @@ class ContextManagerImpl : public ContextManager {
     return gpu_ctx_.size();
   }
   size_t NumStreams(int gpuid) const {
-    return gpu_ctx_.at(gpuid).stream_ctx_.size();
+    return gpu_ctx_.at(gpuid).stream_ctx.size();
   }
 
  private:
   struct GpuRunContext {
-    vector<RunContext> stream_ctx_;
+    vector<RunContext> stream_ctx;
   };
 
  private:

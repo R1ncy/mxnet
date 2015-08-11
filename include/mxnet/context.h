@@ -13,7 +13,7 @@ struct Context {
   /*! \brief device id we are going to run it on */
   int dev_id;
   /*! \brief constructor */
-  Context() : dev_mask(cpu::kDevMask), dev_id(0) {}
+  Context() : dev_mask(mshadow::cpu::kDevMask), dev_id(0) {}
   /*!
    * \brief constructor of context
    * \param dev_mask the device mask
