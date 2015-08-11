@@ -1,11 +1,13 @@
 // Copyright (c) 2015 by Contributors
 #include "mxnet/context.h"
 #include "dmlc/logging.h"
+#if MXNET_USE_CUDA
+#include "mxnet/cuda_utils.h"
+#endif  // MXNET_USE_CUDA
 
 #include <vector>
 
 #if MXNET_USE_CUDA
-#include "mxnet/cuda_utils.h"
 #include <cuda_runtime_api.h>
 #include <cublas_v2.h>
 #endif  // MXNET_USE_CUDA
@@ -40,7 +42,6 @@ class ContextManagerImpl : public ContextManager {
         CUDNN_CALL(cudnnCreate(cudnn_handle));
         CUDNN_CALL(cudnnSetStream(*cudnn_handle, *stream));
         gctx.stream_ctx.push_back(RunContext{stream, cublas_handle, cudnn_handle});
-        //gctx.stream_ctx.emplace_back(stream, cublas_handle, cudnn_handle);
 #else  // MXNET_USE_CUDNN
         gctx.stream_ctx.push_back(RunContext{stream, cublas_handle, nullptr});
 #endif  // MXNET_USE_CUDNN
@@ -58,7 +59,7 @@ class ContextManagerImpl : public ContextManager {
         return &gpu_ctx_.at(ctx.dev_id).stream_ctx.at(streamid);
       default:
         LOG(FATAL) << "unknown dev mask:" << ctx.dev_mask;
-    };
+    }
     return nullptr;
   }
   size_t NumGpus() const {
