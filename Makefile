@@ -90,8 +90,8 @@ mxnet_api.o: api/mxnet_api.cc
 operator.o: src/operator/operator.cc
 io.o: src/io/io.cc
 
-api/libmxnet.a: $(OBJ) $(OBJCXX11) $(CUOBJ)
-api/libmxnet.so: $(OBJ) $(OBJCXX11) $(CUOBJ)
+api/libmxnet.a: $(OBJ) $(OBJCXX11) $(CUOBJ) $(LIB_DEP) 
+api/libmxnet.so: $(OBJ) $(OBJCXX11) $(CUOBJ) $(LIB_DEP)
 
 test/api_registry_test: test/api_registry_test.cc api/libmxnet.a
 test/io_mnist_test: test/io_mnist_test.cc api/libmxnet.a $(DMLC_CORE)/libdmlc.a
