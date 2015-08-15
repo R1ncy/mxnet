@@ -89,5 +89,17 @@ struct DataBatch {
  * \return the data IIterator ptr
  */
 IIterator<DataBatch> *CreateIterator(const std::vector<std::pair<std::string, std::string> > &cfg);
+/*!
+ * \brief create the databatch iterator IIterator from config file
+ * \param cfg_path configure file path
+ * \return the data IIterator ptr
+ */
+IIterator<DataBatch> *CreateIteratorFromConfig(const char* cfg_path);
+/*!
+ * \brief create the databatch iterator IIterator by iter name
+ * \param iter_name can be mnist, imgrec and so on
+ * \return the data IIterator ptr
+ */
+IIterator<DataBatch> *CreateIteratorByName(const char* iter_name);
 }  // namespace mxnet
 #endif  // MXNET_IO_H_

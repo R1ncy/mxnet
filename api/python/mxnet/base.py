@@ -53,7 +53,9 @@ _LIB = _load_lib()
 # type definitions
 mx_uint = ctypes.c_uint
 mx_float = ctypes.c_float
+mx_cstring = ctypes.c_char_p
 NArrayHandle = ctypes.c_void_p
+DataIterHandle = ctypes.c_void_p
 FunctionHandle = ctypes.c_void_p
 SymbolCreatorHandle = ctypes.c_void_p
 SymbolHandle = ctypes.c_void_p

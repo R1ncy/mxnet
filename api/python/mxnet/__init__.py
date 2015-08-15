@@ -15,6 +15,7 @@ from .narray import NArray
 from .function import _FunctionRegistry
 from .symbol import Symbol
 from .symbol_creator import _SymbolCreatorRegistry
+from .io import DataIter
 
 # this is a global function registry that can be used to invoke functions
 op = NArray._init_function_registry(_FunctionRegistry())
