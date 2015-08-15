@@ -381,6 +381,7 @@ MXNET_DLL int MXIOSetParam(DataIterHandle handle,
                             const char *name, const char *val);
 /*!
  * \brief Init after set parameter
+ * \param handle the handle to iterator
  * \return 0 when success, -1 when failure happens
  */
 MXNET_DLL int MXIOInit(DataIterHandle handle);
