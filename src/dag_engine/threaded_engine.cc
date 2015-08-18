@@ -8,7 +8,9 @@
 #include <random>
 
 #include "dmlc/logging.h"
+#include "dmlc/memory.h"
 #include "mxnet/dag_engine.h"
+#include "../common/memory.h"
 #include "../common/spin_lock.h"
 #include "../common/concurrent_blocking_queue.h"
 
@@ -22,7 +24,7 @@ class ThreadedEngine : public DAGEngine {
  public:
   explicit ThreadedEngine(int numthreads = DEFAULT_NUM_WORKER_THREADS): numthreads_(numthreads) {
     for (int i = 0; i < numthreads; ++i) {
-      worker_queues_.push_back(new common::ConcurrentBlockingQueue<OpDescr*>());
+      worker_queues_.push_back(new common::ConcurrentBlockingQueue<OpDescr_*>());
       workers_.emplace_back(&ThreadedEngine::WorkerRoutine, this, i);
     }
   }
@@ -34,8 +36,8 @@ class ThreadedEngine : public DAGEngine {
     }
   }
   Operator NewOperator(AsyncFn fn,
-                               const std::vector<Variable> &use_vars,
-                               const std::vector<Variable> &mutate_vars) override {
+                       const std::vector<Variable> &use_vars,
+                       const std::vector<Variable> &mutate_vars) override {
     // TODO(minjie): TBD
     return nullptr;
   }
@@ -49,10 +51,10 @@ class ThreadedEngine : public DAGEngine {
             Context exec_ctx,
             const vector<Variable> &use_vars,
             const vector<Variable> &mutate_vars) override {
-    shared_ptr<OpDescr> opd(new OpDescr{exec_fun, exec_ctx, use_vars, mutate_vars},
-        [this] (OpDescr* o) { this->OnDepsResolved(o); });
+    shared_ptr<OpDescr_> opd(new OpDescr_{exec_fun, exec_ctx, use_vars, mutate_vars},
+        [this] (OpDescr_* o) { this->OnDepsResolved(o); });
     for ( Variable v : use_vars ) {  // read
-      VarDescr* vard = static_cast<VarDescr*>(v);  // safe to cast here
+      VarDescr_* vard = static_cast<VarDescr_*>(v);  // safe to cast here
       spin_lock(&vard->lock);
       if (vard->rw < 0) {
         vard->waitings.push(make_pair(opd, DepType::kRead));
@@ -62,7 +64,7 @@ class ThreadedEngine : public DAGEngine {
       spin_unlock(&vard->lock);
     }
     for ( Variable v : mutate_vars ) {  // write
-      VarDescr* vard = static_cast<VarDescr*>(v);  // safe to cast here
+      VarDescr_* vard = static_cast<VarDescr_*>(v);  // safe to cast here
       spin_lock(&vard->lock);
       if (vard->rw != 0) {
         vard->waitings.push(make_pair(opd, DepType::kWrite));
@@ -83,7 +85,7 @@ class ThreadedEngine : public DAGEngine {
   void PushDelete(Fn delete_fun, Context exec_ctx, Variable var) override {
     this->Push([delete_fun, var] (RunContext ctx) {
           delete_fun(ctx);
-          delete static_cast<VarDescr*>(var);  // TODO(minjie): use variable pool instead
+          delete static_cast<VarDescr_*>(var);  // TODO(minjie): use variable pool instead
         }, exec_ctx, {}, {var});
   }
   Variable NewVar() override {
@@ -91,7 +93,7 @@ class ThreadedEngine : public DAGEngine {
     // that have the info about the variable
     // use ptr directly instead of ID because this avoids an indirect mapping
     // TODO(minjie): use variable pool instead
-    VarDescr* vd = new VarDescr;
+    VarDescr_* vd = new VarDescr_;
     vd->lock = SPINLOCK_INITIALIZER;
     vd->rw = 0;
     return vd;
@@ -107,23 +109,35 @@ class ThreadedEngine : public DAGEngine {
   enum class DepType {
     kRead = 0,
     kWrite,
-    kDelete,
   };
-  struct OpDescr {
-    AsyncFn op;
-    Context exec_ctx;
+  struct OpDescr_;
+  struct VarDescr_;
+  struct RuntimeOp_;
+
+  struct OpDescr_ {
+    // execution function
+    AsyncFn fn;
+    // read dependencies
     vector<Variable> read_vars;
+    // write dependencies
     vector<Variable> write_vars;
+    // whether this operator needs to be deleted upon finish execution
+    bool transient;
   };
-  struct VarDescr {
+  struct VarDescr_ {
     spinlock lock;
     int rw;  // a semaphore-like count
              // if rw > 0, the variable has several readers and the number
              //   means how many operators are currently reading it;
              // if rw < 0, the varaible has one writer (should be -1)
-    queue<pair<shared_ptr<OpDescr>, DepType>> waitings;
+    queue<pair<RuntimeOp_*, DepType>> waitings;
   };
-  void TriggerWaiting(VarDescr* vard) {
+  struct RuntimeOp_ {
+    OpDescr_* op_descr;
+    atomic<int> dep_count;
+    Context ctx;
+  };
+  void TriggerWaiting(VarDescr_* vard) {
     // ATTENTION: this function should be called with vard->lock held.
     CHECK(vard->rw == 0) << "the variable should be free during triggering";
     if (!vard->waitings.empty()) {
@@ -139,10 +153,10 @@ class ThreadedEngine : public DAGEngine {
       }
     }
   }
-  void OnOpFinished(OpDescr* opd) {
+  void OnOpFinished(OpDescr_* opd) {
     CHECK(opd) << "completing a nullptr op!";
     for (Variable v : opd->read_vars) {
-      VarDescr* vard = static_cast<VarDescr*>(v);  // safe to cast here
+      VarDescr_* vard = static_cast<VarDescr_*>(v);  // safe to cast here
       spin_lock(&vard->lock);
       CHECK(vard->rw > 0) << "incorrect rw count (reader):" << vard->rw;
       if (--vard->rw == 0) {
@@ -151,7 +165,7 @@ class ThreadedEngine : public DAGEngine {
       spin_unlock(&vard->lock);
     }
     for (Variable v : opd->write_vars) {
-      VarDescr* vard = static_cast<VarDescr*>(v);  // safe to cast here
+      VarDescr_* vard = static_cast<VarDescr_*>(v);  // safe to cast here
       spin_lock(&vard->lock);
       CHECK(vard->rw == -1) << "incorrect rw count (writer):" << vard->rw;
       vard->rw = 0;
@@ -164,7 +178,7 @@ class ThreadedEngine : public DAGEngine {
     // TODO(minjie): get the correct runtime context
     return RunContext();
   }
-  void OnDepsResolved(OpDescr* opd) {
+  void OnDepsResolved(OpDescr_* opd) {
     static default_random_engine generator;
     static uniform_int_distribution<int> distribution(0, numthreads_ - 1);
     int thrid = distribution(generator);
@@ -172,7 +186,7 @@ class ThreadedEngine : public DAGEngine {
     worker_queues_[thrid]->Push(opd);
   }
   void WorkerRoutine(int thrid) {
-    OpDescr* opd = nullptr;
+    OpDescr_* opd = nullptr;
     while (!worker_queues_[thrid]->Pop(&opd)) {
       // LOG(INFO) << "worker thread #" << thrid << " got operator " << opd;
       opd->op(GetRunContext(opd->exec_ctx), [this, opd] () { this->OnOpFinished(opd); });
@@ -182,8 +196,12 @@ class ThreadedEngine : public DAGEngine {
 
  private:
   const int numthreads_;
-  vector<common::ConcurrentBlockingQueue<OpDescr*>*> worker_queues_;
+  vector<common::ConcurrentBlockingQueue<RuntimeOp_*>*> worker_queues_;
   vector<thread> workers_;
+
+  dmlc::PoolAllocator<VarDescr_> var_allocator_;
+  dmlc::PoolAllocator<OpDescr_> op_allocator_;
+  dmlc::PoolAllocator<RuntimeOp_> runtime_op_allocator_;
 };
 
 // implements the singleton factory
