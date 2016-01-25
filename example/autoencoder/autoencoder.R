@@ -1,5 +1,14 @@
 require(mxnet)
 
+AutoEncoder <-
+  setRefClass(
+    "AutoEncoder", fields = c(
+      "data", "N", "dims", "stacks", "pt_dropout",
+      "ft_dropout", "input_act",
+      "internal_act", "output_act"
+    )
+  )
+
 make_stack <-
   function(ctx, istack, data, num_input, num_hidden, sparseness_penalty = NULL,
            idropout = NULL, odropout = NULL,
@@ -99,4 +108,45 @@ make_stack <-
         'args_mult' = args_mult, 'auxs' = auxs
       )
     )
+  }
+
+AE_setup <-
+  function(ctx, dims, sparseness_penalty = NULL, pt_dropout = NULL, ft_dropout = NULL,
+           input_act = NULL, internal_act = 'relu', output_act = NULL) {
+    data = mx.symbol.Variable('data')
+    ae_model <- AutoEncoder$new('data' = data)
+    ae_model$N <- length(dims) - 1
+    ae_model$dims <- dims
+    ae_model$stacks <- list()
+    ae_model$pt_dropout <- pt_dropout
+    ae_model$ft_dropout <- ft_dropout
+    ae_model$input_act <- input_act
+    ae_model$internal_act <- internal_act
+    ae_model$output_act <- output_act
+    
+    for (i in 1:ae_model$N) {
+      if (i == 1) {
+        decoder_act = input_act
+        idropout = NULL
+      } else {
+        decoder_act = internal_act
+        idropout = pt_dropout
+      }
+      
+      if (i == ae_model$N) {
+        encoder_act = output_act
+        odropout = NULL
+      } else {
+        encoder_act = internal_act
+        odropout = pt_dropout
+      }
+      
+      istack <-
+        make_stack(
+          ctx, i, ae_model$data, dims[i], dims[i + 1],
+          sparseness_penalty, idropout, odropout, encoder_act, decoder_act
+        )
+      
+    }
+    
   }
