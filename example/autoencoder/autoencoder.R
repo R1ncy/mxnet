@@ -3,9 +3,9 @@ require(mxnet)
 AutoEncoder <-
   setRefClass(
     "AutoEncoder", fields = c(
-      "data", "N", "dims", "stacks", "pt_dropout",
-      "ft_dropout", "input_act",
-      "internal_act", "output_act"
+      "data", "N", "dims", "stacks", "pt_dropout", "ft_dropout", "input_act",
+      "internal_act", "output_act", "args", "args_grad", "args_mult", "auxs",
+      "encoder", "internals", "decoder", "loss"
     )
   )
 
@@ -110,6 +110,81 @@ make_stack <-
     )
   }
 
+make_encoder <-
+  function(data, dims, sparseness_penalty = NULL, dropout = NULL,
+           internal_act = 'relu', output_act = NULL) {
+    x <- data
+    internals <- list()
+    N <- length(dims) - 1
+    for (i in 1:N) {
+      x <-
+        mx.symbol.FullyConnected(
+          name = paste0('encoder_', i), data = x, num_hidden = dims[i + 1]
+        )
+      if (!is.null(internal_act) && i < N) {
+        x <- mmx.symbol.Activation(data = x, act.type = output_act)
+        if (internal_act == "sigmod" &&
+            !is.null(sparseness_penalty)) {
+          x <-
+            mx.symbol.IdentityAttachKLSparseReg(
+              data = x, name = paste0('sparse_encoder_', i), penalty = sparseness_penalty
+            )
+        }
+      } else if (!is.null(output_act) && i == N) {
+        x <- mx.symbol.Activation(data = x, act.type = output_act)
+        if (output_act == "sigmod" &&
+            !is.null(sparseness_penalty)) {
+          x <-
+            mx.symbol.IdentityAttachKLSparseReg(
+              data = x, name = paste0('sparse_encoder_', i), penalty = sparseness_penalty
+            )
+        }
+      }
+      
+      if (!is.null(dropout)) {
+        x <- mx.symbol.Dropout(data = x, p = dropout)
+      }
+      internals <- c(internals, x)
+    }
+    return(list('x' = x, 'internals' = internals))
+  }
+
+
+make_decoder <-
+  function(feature, dims, sparseness_penalty = NULL, dropout = NULL, internal_act = 'relu', input_act = NULL) {
+    x <- feature
+    N = length(dims) - 1
+    for (i in N:1) {
+      x <-
+        mx.symbol.FullyConnected(
+          name = paste0('decoder_', i), data = x, num.hidden = dims[i]
+        )
+      if (!is.null(internal_act) && i > 1) {
+        x <- mx.symbol.Activation(data = x, act.type = internal_act)
+        if (internal_act == "sigmod" &&
+            !is.null(sparseness_penalty)) {
+          x <-
+            mx.symbol.IdentityAttachKLSparseReg(
+              data = x, name = paste0('sparse_decoder_', i), penalty = sparseness_penalty
+            )
+        }
+      } else if (!is.null(input_act) && i == 1) {
+        x <- mx.symbol.Activation(data = x, act.type = input_act)
+        if (input_act == "sigmod" && !is.null(sparseness_penalty)) {
+          x <-
+            mx.symbol.IdentityAttachKLSparseReg(
+              data = x, name = paste0('sparse_decoder_', i), penalty = sparseness_penalty
+            )
+        }
+      }
+      
+      if (!is.null(dropout) && i > 1) {
+        x <- mx.symbol.Dropout(data = x, p = dropout)
+      }
+    }
+    return(x)
+  }
+
 AE_setup <-
   function(ctx, dims, sparseness_penalty = NULL, pt_dropout = NULL, ft_dropout = NULL,
            input_act = NULL, internal_act = 'relu', output_act = NULL) {
@@ -146,7 +221,28 @@ AE_setup <-
           ctx, i, ae_model$data, dims[i], dims[i + 1],
           sparseness_penalty, idropout, odropout, encoder_act, decoder_act
         )
-      
+      ae_model$stacks <- c(ae_model$stacks, istack$x)
+      ae_model$args <- c(ae_model$args, istack$args)
+      ae_model$args_grad <- c(ae_model$args_grad, istack$args_grad)
+      ae_model$args_mult <- c(ae_model$args_mult, istack$args_mult)
+      ae_model$auxs <- c(ae_model$auxs, istack$auxs)
     }
+    encoder <-
+      make_encoder(ae_model$data, dims, sparseness_penalty, ft_dropout, internal_act, output_act)
+    ae_model$encoder <- encoder$x
+    ae_model$internals <- encoder$internals
+    
+    decoder <-
+      make_decoder(ae_model$encoder, dims, sparseness_penalty, ft_dropout, internal_act, input_act)
+    if (input_act == "softmax") {
+      ae_model$loss = ae_model$decoder
+    } else {
+      ae_model$loss <-
+        mx.symbol.LinearRegressionOutput(data = ae_model$decoder, label = ae_model$data)
+    }
+  }
+
+layerwise_pretrain <-
+  function(ae_model, X, batch_size, n_iter, optimizer, l_rate, decay, lr_scheduler = NULL) {
     
   }
